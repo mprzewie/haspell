@@ -1,0 +1,48 @@
+#language
+Polish
+
+#phones
+a -> a
+ą -> on
+b -> b
+c -> c
+ć -> ci
+ch -> h
+ci -> ci,i
+cz -> cz
+d -> d
+dż -> drz
+drz -> drz
+dz -> dz
+e -> e
+ę -> en
+f -> f
+g -> g
+h -> h
+i -> i
+j -> j
+k -> k
+l -> l
+ł -> ll
+m -> m
+n -> n
+ń -> ni
+ni -> ni,i
+o -> o
+ó -> u
+p -> p
+r -> r
+rz -> rz
+s -> s
+ś -> si
+si -> si,i
+sz -> sz
+t -> t
+u -> u
+w -> w
+y -> y
+z -> z
+ź -> zi
+zi -> zi,i
+ż -> rz
+
