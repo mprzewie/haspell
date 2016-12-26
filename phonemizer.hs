@@ -5,19 +5,23 @@ import Data.Text (pack, unpack, splitOn)
 
 data LangRule = MkLangRule {txt::String, phones::[String]} deriving Show
 
+phonemizeCMD:: String -> String -> IO [String]
+phonemizeCMD lang inp = phonemize lang (return inp)
+
 phonemize:: String -> IO String -> IO [String]
 phonemize lang inp=rlz>>= \r -> inp>>= \i -> 
 			if i=="" then return $ []
-			else return $ [txt ( match i r)] 
-
+			else pnmzrest i r >>= \rst -> fmap (++rst) (return $ phones ( match i r))
 	where 
 		rlz = rules lang
+		pnmzrest i r= phonemize lang (rest (match i r) i)
+
 
 rest:: LangRule -> String -> IO String
 rest l s= return $ reverse $ take (length s - length (txt l)) $ reverse s
 
 match:: String -> [LangRule] -> LangRule
-match _ [] = MkLangRule "" []
+match _ [] = MkLangRule "" ["-"]
 match s (x:xs) = 
 	if matching x then x
 	else match s xs
@@ -25,7 +29,7 @@ match s (x:xs) =
 		matching a = (length s >= length (txt a))&&(foldr (&&) True (zipWith (==) s (txt a)))
 
 rules:: String -> IO [LangRule]
-rules lang= fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
+rules lang= fmap (++[MkLangRule " " ["-"]]) $fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
 	
 	where 
 		fileCont = readFile ("lang/"++lang++"/"++lang++".hsp")
