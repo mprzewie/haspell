@@ -1,7 +1,7 @@
 module Phonemizer (module Phonemizer) where
 -- for converting text into phones
 import Data.Text (pack, unpack, splitOn)
-
+import Data.Char (toLower)
 
 data LangRule = MkLangRule {txt::String, phones::[String]} deriving Show
 
@@ -9,13 +9,16 @@ phonemizeCMD:: String -> String -> IO [String]
 phonemizeCMD lang inp = phonemize lang (return inp)
 
 phonemize:: String -> IO String -> IO [String]
-phonemize lang inp=rlz>>= \r -> inp>>= \i -> 
-			if i=="" then return $ []
-			else pnmzrest i r >>= \rst -> fmap (++rst) (return $ phones ( match i r))
+phonemize lang inp=fmap (filter (\x -> not (x==""))) result 
 	where 
+		result = rlz>>= 
+			\r -> (fmap (map (\x -> toLower x)) inp)>>= 
+				\i -> 
+					if i=="" then return $ []
+					else pnmzrest i r >>= \rst -> fmap (++rst) (return $ phones ( match i r))
 		rlz = rules lang
 		pnmzrest i r= phonemize lang (rest (match i r) i)
-
+	
 
 rest:: LangRule -> String -> IO String
 rest l s= return $ reverse $ take (length s - length (txt l)) $ reverse s
@@ -28,13 +31,17 @@ match s (x:xs) =
 	where
 		matching a = (length s >= length (txt a))&&(foldr (&&) True (zipWith (==) s (txt a)))
 
-rules:: String -> IO [LangRule]
-rules lang= fmap (++[MkLangRule " " ["-"]]) $fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
-	
+rules :: String -> IO [LangRule]
+rules lang = langRules "std">>= \r -> fmap (++r++[MkLangRule " " ["-"]]) (langRules lang)
+
+langRules:: String -> IO [LangRule]
+langRules lang= fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
 	where 
 		fileCont = readFile ("lang/"++lang++"/"++lang++".hsp")
 		langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f)!!1)!!1)
 		rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f)!!2)
+
+
 
 strToRule::String -> LangRule
 strToRule s = MkLangRule letter phones
@@ -52,9 +59,9 @@ splitStr regex input = Prelude.map unpack $ splitOn (pack regex) $ pack input
 despace :: String -> String 
 despace s = filter (\x -> not(x==' ')) s
 
-printList :: Show a => [a] => IO()
-printList []=putStr ""
-printList (x:xs) = print x >>printList xs
+-- printList :: Show a => [a] => IO()
+-- printList []=putStr ""
+-- printList (x:xs) = print x >>printList xs
 
 sortRules :: [LangRule] -> [LangRule]
 sortRules [] = []
