@@ -3,81 +3,72 @@ module Phonemizer (module Phonemizer) where
 import Data.Text (pack, unpack, splitOn)
 import Data.Char (toLower)
 
-data LangRule = MkLangRule {txt::String, phones::[String]} deriving Show
+data LangRule = MkLangRule {token :: String, phones :: [String]} deriving Show
 
-phonemizeCMD:: String -> String -> IO [String]
+phonemizeCMD :: String -> String -> IO [String]
 phonemizeCMD lang inp = phonemize lang (return inp)
 
-phonemize:: String -> IO String -> IO [String]
-phonemize lang inp=fmap (filter (\x -> not (x==""))) result 
-	where 
-		result = rlz>>= 
-			\r -> (fmap (map (\x -> toLower x)) inp)>>= 
-				\i -> 
-					if i=="" then return $ []
-					else pnmzrest i r >>= \rst -> fmap (++rst) (return $ phones ( match i r))
-		rlz = rules lang
-		pnmzrest i r= phonemize lang (rest (match i r) i)
-	
 
-rest:: LangRule -> String -> IO String
-rest l s= return $ reverse $ take (length s - length (txt l)) $ reverse s
+phonemize :: String -> IO String -> IO [String]
+phonemize lang inp = do
+        rlz <- rules lang
+        i <- inp
+        if null i
+            then return []
+            else do
+                rst <- phonemize lang (rest (match i rlz) i)
+                fmap (++rst) (return $ phones $ match i rlz)
+
+rest :: LangRule -> String -> IO String
+rest l s = return $ drop (length (token l)) s
 
 match:: String -> [LangRule] -> LangRule
 match _ [] = MkLangRule "" ["-"]
 match s (x:xs) = 
-	if matching x then x
-	else match s xs
-	where
-		matching a = (length s >= length (txt a))&&(foldr (&&) True (zipWith (==) s (txt a)))
+    if matching x then x
+    else match s xs
+    where
+        matching a = (length s >= length (token a))
+                     && (foldr (&&) True (zipWith (==) s (token a)))
 
 rules :: String -> IO [LangRule]
-rules lang = langRules "std">>= \r -> fmap (++r++[MkLangRule " " ["-"]]) (langRules lang)
+rules lang = fmap (++[MkLangRule " " ["-"]]) $ fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
+    where 
+        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
+        langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f) !! 1) !! 1)
+        rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 2)
 
-langRules:: String -> IO [LangRule]
-langRules lang= fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
-	where 
-		fileCont = readFile ("lang/"++lang++"/"++lang++".hsp")
-		langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f)!!1)!!1)
-		rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f)!!2)
+strToRule :: String -> LangRule
 
-
-
-strToRule::String -> LangRule
 strToRule s = MkLangRule letter phones
-	where
-		letter = splitRule!!0
-		phones = splitStr "," $ splitRule!!1
-		splitRule=splitStr "->" $ despace s
+    where
+        letter = splitRule !! 0
+        phones = splitStr "," $ splitRule !! 1
+        splitRule = splitStr "->" $ despace s
 
 lines' :: String -> [String]
-lines' s = filter (\x -> not (x=="")) $ lines s
+lines' s = filter (/= "") $ lines s
 
 splitStr :: String -> String -> [String]
 splitStr regex input = Prelude.map unpack $ splitOn (pack regex) $ pack input
 
 despace :: String -> String 
-despace s = filter (\x -> not(x==' ')) s
-
--- printList :: Show a => [a] => IO()
--- printList []=putStr ""
--- printList (x:xs) = print x >>printList xs
+despace s = filter (/= ' ') s
 
 sortRules :: [LangRule] -> [LangRule]
 sortRules [] = []
 sortRules xl = rl ++ ml ++ ll
-	where
-		piv= xl!!0
-		ll = sortRules [l | l <- xl, (length (txt l))<(length (txt piv))]
-		ml = sortAlph [m | m <- xl, (length (txt m))==(length (txt piv))]
-		rl = sortRules [r | r <- xl, (length (txt r))>(length (txt piv))]
+    where
+        piv = xl !! 0
+        ll = sortRules [l | l <- xl, length (token l) < length (token piv)]
+        ml = sortAlph [m | m <- xl, length (token m) == length (token piv)]
+        rl = sortRules [r | r <- xl, length (token r) > length (token piv)]
 
 sortAlph :: [LangRule] -> [LangRule]
 sortAlph [] = []
 sortAlph xl = ll ++ ml ++ rl
-	where
-		piv= xl!!0
-		ll = sortAlph [l | l <- xl,  (txt l)<(txt piv)]
-		ml = [m | m <- xl, (txt m)==(txt piv)]
-		rl = sortAlph [r | r <- xl, (txt r)>(txt piv)]
-
+    where
+        piv = xl !! 0
+        ll = sortAlph [l | l <- xl,  token l < token piv]
+        ml = [m | m <- xl, token m == token piv]
+        rl = sortAlph [r | r <- xl, token r > token piv]
