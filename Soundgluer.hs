@@ -7,7 +7,7 @@ glueSpeech fileName phones
         | null phones = return ()
         | otherwise   = do
             waves <- mapM phoneToWAVE phones
-            putWAVEFile fileName $ foldr1 concatWAVE waves
+            putWAVEFile (fileName++".wav") $ foldr1 concatWAVE waves
     
 phoneToWAVE :: String -> IO WAVE
 phoneToWAVE p =

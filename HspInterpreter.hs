@@ -6,46 +6,18 @@ import Data.Char (toLower)
 
 data LangRule = MkLangRule {token :: String, phones :: [String]} deriving Show
 
-phonemizeCMD :: String -> String -> IO [String]
-phonemizeCMD lang inp = phonemize lang (return inp)
-
-
-phonemize :: String -> IO String -> IO [String]
-phonemize lang inp = do
-        rlz <- rules lang
-        i <- fmap (map toLower) inp
-        if null i
-            then return []
-            else do
-                rst <- phonemize lang (rest (match i rlz) i)
-                res <- fmap (++rst) (return $ phones $ match i rlz)
-                return (filter (/="") res)
-
-rest :: LangRule -> String -> IO String
-rest l s = return $ drop (length (token l)) s
-
-match:: String -> [LangRule] -> LangRule
-match _ [] = MkLangRule "" ["-"]
-match s (x:xs) = 
-    if matching x then x
-    else match s xs
-    where
-        matching a = (length s >= length (token a))
-                     && (foldr (&&) True (zipWith (==) s (token a)))
-
 rules :: String -> IO [LangRule]
 rules lang = (langRules "std")>>= \r -> fmap (++r++[MkLangRule " " ["-"]]) (langRules lang)
 
 langRules :: String -> IO [LangRule]
-langRules lang = fmap sortRules $ fmap  (map $ strToRule) rulesStringList 
+langRules lang = fmap sortRules $ fmap  (map $ strToLangRule) rulesStringList 
     where 
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
         langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f) !! 1) !! 1)
         rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 2)
 
-strToRule :: String -> LangRule
-
-strToRule s = MkLangRule letter phones
+strToLangRule :: String -> LangRule
+strToLangRule s = MkLangRule letter phones
     where
         letter = splitRule !! 0
         phones = splitStr "," $ splitRule !! 1
@@ -77,3 +49,36 @@ sortAlph xl = ll ++ ml ++ rl
         ll = sortAlph [l | l <- xl,  token l < token piv]
         ml = [m | m <- xl, token m == token piv]
         rl = sortAlph [r | r <- xl, token r > token piv]
+
+
+data Alias = MkAlias {alias :: String, matches :: [String]} deriving Show
+
+
+strToAlias:: String -> Alias
+strToAlias s = MkAlias alias matches
+    where
+        alias = splitRule !! 0
+        matches = splitStr "," $ splitRule !! 1
+        splitRule = splitStr "->" $ despace s
+
+aliases :: String -> IO [Alias]
+aliases lang = fmap  (map $ strToAlias) rulesStringList 
+    where 
+        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
+        rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 3)
+
+data AliasRule = MkAliasRule {regex::[String], output::[String]} deriving Show
+
+aliasRulesUnAliased :: String -> IO [AliasRule]
+aliasRulesUnAliased lang = fmap  (map $ strToAliasRule) rulesStringList 
+    where 
+        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
+        rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 4)
+
+
+strToAliasRule :: String -> AliasRule
+strToAliasRule s = MkAliasRule regex output
+    where
+        regex = splitStr "," $ splitRule !! 0
+        output = splitStr "," $ splitRule !! 1
+        splitRule = splitStr "->" $ despace s

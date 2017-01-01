@@ -28,7 +28,7 @@ l -> l
 m -> m
 n -> n
 ń -> ni
-ni -> ni,i
+ni -> ni
 o -> o
 ó -> u
 p -> p
@@ -48,5 +48,10 @@ zi -> zi,i
 ż -> rz
 v -> w
 
-#aliases
 
+#alias
+<sam> -> a,ą,e,ę,i,o,ó,u,y
+<spol> -> g,k
+
+#aliasrules
+<spol>,i,<sam> -> <0>,j,<1>

@@ -21,3 +21,6 @@ cabal.project.local
 
 # Reaper
 reaper/
+
+# Waves
+*.wav
