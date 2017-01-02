@@ -39,6 +39,7 @@ considerAliases rules phones= maybe didntmatch didmatch $ matchAliasRule phones 
 		where
 			didntmatch=[head phones]++(considerAliases rules (tail phones))
 			didmatch =(\rule -> considerAliases rules $ (output rule)++(rest rule phones))
+			--didmatch =(\rule -> (output rule)++(considerAliases rules $ rest rule phones))
 			rest aliasrule s = drop (length (regex aliasrule)) s
 
 
