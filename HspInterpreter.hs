@@ -10,7 +10,7 @@ rules :: String -> IO [LangRule]
 rules lang = (langRules "std")>>= \r -> fmap (++r++[MkLangRule " " ["-"]]) (langRules lang)
 
 langRules :: String -> IO [LangRule]
-langRules lang = fmap sortRules $ fmap  (map $ strToLangRule) rulesStringList 
+langRules lang = fmap sortLangRules $ fmap  (map $ strToLangRule) rulesStringList 
     where 
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
         langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f) !! 1) !! 1)
@@ -32,14 +32,14 @@ splitStr regex input = Prelude.map unpack $ splitOn (pack regex) $ pack input
 despace :: String -> String 
 despace s = filter (/= ' ') s
 
-sortRules :: [LangRule] -> [LangRule]
-sortRules [] = []
-sortRules xl = rl ++ ml ++ ll
+sortLangRules :: [LangRule] -> [LangRule]
+sortLangRules [] = []
+sortLangRules xl = rl ++ ml ++ ll
     where
         piv = xl !! 0
-        ll = sortRules [l | l <- xl, length (token l) < length (token piv)]
+        ll = sortLangRules [l | l <- xl, length (token l) < length (token piv)]
         ml = sortAlph [m | m <- xl, length (token m) == length (token piv)]
-        rl = sortRules [r | r <- xl, length (token r) > length (token piv)]
+        rl = sortLangRules [r | r <- xl, length (token r) > length (token piv)]
 
 sortAlph :: [LangRule] -> [LangRule]
 sortAlph [] = []
@@ -90,18 +90,27 @@ unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (output rule) 
             | toDoRegex==[] = [MkAliasRule doneRegex output]
             | head (toDoRegex!!0) == '<' = let 
                         alias=toDoRegex!!0 
-
                         mapStuff = map (\phn -> aliasRuleMaker als (doneRegex++[phn]) (tail toDoRegex) (replaceOccurences ("$"++(show aliasNo)) [phn] output) (aliasNo+1)) (matches (matchAlias als alias))
-                        --mapStuff = map (\phn -> [MkAliasRule toDoRegex [phn]]) (matches (matchAlias als alias))
                         in
                         foldr (++) [] mapStuff
-                        -- map 
-                        -- (\phone -> aliasRuleMaker doneRegex++[phone] (tail toDoRegex) (replaceOccurences "$"++(show aliasNo) phone output) aliasNo+1)
-                        -- (matches (matchAlias als alias))
             | otherwise = aliasRuleMaker als (doneRegex++[head toDoRegex]) (tail toDoRegex) output aliasNo
         matchAlias als alsname = 
             [x | x<-als, (alias x)==alsname]!!0
 
+aliasRules :: String -> IO [AliasRule]
+aliasRules lang = do
+                rlz <- aliasRulesAliased "pol"
+                als <- aliases "pol"
+                return $ sortAliasRules $ foldr (++) [] (map (unAliasRule als) rlz)
+
+sortAliasRules :: [AliasRule] -> [AliasRule]
+sortAliasRules [] = []
+sortAliasRules xl = rl ++ ml ++ ll
+    where
+        piv = xl !! 0
+        ll = sortAliasRules [l | l <- xl, length (regex l) < length (regex piv)]
+        ml = [m | m <- xl, length (regex m) == length (regex piv)]
+        rl = sortAliasRules [r | r <- xl, length (regex r) > length (regex piv)]
 
 replaceOccurences :: Eq a => a -> [a] -> [a] -> [a]
 replaceOccurences _ _ [] = []
@@ -109,9 +118,4 @@ replaceOccurences regex replacer (x:xs)
                     | x==regex = replacer++(replaceOccurences regex replacer xs)
                     | otherwise = [x]++(replaceOccurences regex replacer xs)
 
-unAliasRuleTest = do 
-                als <- aliases "pol"
-                rules <- aliasRulesAliased "pol"
-                let rule = rules!!0
-                return $ unAliasRule als rule
 

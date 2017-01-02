@@ -50,8 +50,8 @@ v -> w
 
 
 #alias
-<sam> -> a,ą,e,ę,i,o,ó,u,y
-<spol> -> g,k
+<vow> -> a,ą,e,ę,i,o,ó,u,y
+<hardcon> -> b,d,f,g,h,k,l,m,p,r,rz,sz,t,w
 
 #aliasrules
-<spol>,i,<sam> -> $0,j,$1
+<hardcon>,i,<vow> -> $0,j,$1
