@@ -54,4 +54,4 @@ v -> w
 <spol> -> g,k
 
 #aliasrules
-<spol>,i,<sam> -> <0>,j,<1>
+<spol>,i,<sam> -> $0,j,$1

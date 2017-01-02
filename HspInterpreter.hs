@@ -69,8 +69,8 @@ aliases lang = fmap  (map $ strToAlias) rulesStringList
 
 data AliasRule = MkAliasRule {regex::[String], output::[String]} deriving Show
 
-aliasRulesUnAliased :: String -> IO [AliasRule]
-aliasRulesUnAliased lang = fmap  (map $ strToAliasRule) rulesStringList 
+aliasRulesAliased :: String -> IO [AliasRule]
+aliasRulesAliased lang = fmap  (map $ strToAliasRule) rulesStringList 
     where 
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
         rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 4)
@@ -82,3 +82,36 @@ strToAliasRule s = MkAliasRule regex output
         regex = splitStr "," $ splitRule !! 0
         output = splitStr "," $ splitRule !! 1
         splitRule = splitStr "->" $ despace s
+
+unAliasRule :: [Alias] -> AliasRule -> [AliasRule]
+unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (output rule) 0  
+    where
+        aliasRuleMaker als doneRegex toDoRegex output aliasNo 
+            | toDoRegex==[] = [MkAliasRule doneRegex output]
+            | head (toDoRegex!!0) == '<' = let 
+                        alias=toDoRegex!!0 
+
+                        mapStuff = map (\phn -> aliasRuleMaker als (doneRegex++[phn]) (tail toDoRegex) (replaceOccurences ("$"++(show aliasNo)) [phn] output) (aliasNo+1)) (matches (matchAlias als alias))
+                        --mapStuff = map (\phn -> [MkAliasRule toDoRegex [phn]]) (matches (matchAlias als alias))
+                        in
+                        foldr (++) [] mapStuff
+                        -- map 
+                        -- (\phone -> aliasRuleMaker doneRegex++[phone] (tail toDoRegex) (replaceOccurences "$"++(show aliasNo) phone output) aliasNo+1)
+                        -- (matches (matchAlias als alias))
+            | otherwise = aliasRuleMaker als (doneRegex++[head toDoRegex]) (tail toDoRegex) output aliasNo
+        matchAlias als alsname = 
+            [x | x<-als, (alias x)==alsname]!!0
+
+
+replaceOccurences :: Eq a => a -> [a] -> [a] -> [a]
+replaceOccurences _ _ [] = []
+replaceOccurences regex replacer (x:xs) 
+                    | x==regex = replacer++(replaceOccurences regex replacer xs)
+                    | otherwise = [x]++(replaceOccurences regex replacer xs)
+
+unAliasRuleTest = do 
+                als <- aliases "pol"
+                rules <- aliasRulesAliased "pol"
+                let rule = rules!!0
+                return $ unAliasRule als rule
+
