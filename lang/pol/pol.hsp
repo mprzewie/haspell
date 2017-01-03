@@ -52,7 +52,9 @@ v -> w
 #alias
 <vow> -> a,ą,e,ę,i,o,ó,u,y
 <hardcon> -> b,d,f,g,h,k,l,m,p,r,rz,sz,t,w
+<softcon> -> dzi,ni,si,zi
 
 #aliasrules
 <hardcon>,i,<vow> -> $0,j,$1
 <vow>,i,<vow> -> $0,j,$1
+<softcon>,i,<vow> -> $0,$1
