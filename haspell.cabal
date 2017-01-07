@@ -20,7 +20,10 @@ library
                      , Soundgluer
   build-depends:       base >= 4.7 && < 5
                      , text
+                     , array
                      , HCodecs
+                     , directory
+                     , containers
   default-language:    Haskell2010
 
 executable haspell-exe
