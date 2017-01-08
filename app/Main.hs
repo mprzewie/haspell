@@ -3,38 +3,48 @@ module Main where
 import System.Environment
 import System.Exit
 
--- import qualified Data.Text.IO as T
-
 import Phonemizer (phonemize)
--- import Soundgluer (glueSpeech)
+import Soundgluer (glueSpeech)
 
 
 usage :: String
-usage = "Usage: haspell LANGUAGE INPUT OUTPUT"
+usage = "Usage: haspell LANGUAGE [" ++ fileOption ++ "] INPUT OUTPUT\n\
+        \     | haspell [LANGUAGE] INPUT"
+
+fileOption :: String
+fileOption = "-f"
+
+defaultLang :: String
+defaultLang = "pol"
+
+defaultOutput :: String
+defaultOutput = "haspelled"
 
 
 main :: IO ()
 main = do
-    args@(language : input : output) <- parseArgs =<< getArgs
-    phones <- phonemize language input
-    print phones
-    -- -> (phonemize language text) >>= \phones
-    -- -> (glueSpeech filename phones)
+    args@(lang : input : [output]) <- parseArgs =<< getArgs
+    phones <- phonemize lang input
+    spell lang input output
 
 parseArgs :: [String] -> IO [String]
-parseArgs args
-    | length args < 3 = invalidArgumentsError
-    | otherwise       = return $ take 3 args
-
+parseArgs args = case args of
+                    [input]                                   -> return                              $ defaultLang : input : [defaultOutput]
+                    (lang : [input])                          -> return                              $ lang        : input : [defaultOutput]
+                    (lang : fileOption : input  : output : _) -> readFile input >>= \input -> return $ lang        : input : [output]
+                    (lang : input      : output : _)          -> return                              $ lang        : input : [output]
+                    _                                         -> invalidArgumentsError
+                    
 invalidArgumentsError :: IO a
 invalidArgumentsError = do
     putStrLn usage
     exitFailure
 
-
 -- GHCi support
-spell :: String -> String -> String -> IO()
-spell lang txt filename = (phonemize lang txt) >>= \phones -> print phones --(glueSpeech filename phones)
+spell :: String -> String -> String -> IO ()
+spell lang input output = do
+    phones <- phonemize lang input
+    glueSpeech lang phones output
 
-bitbox :: String -> IO()
-bitbox txt = spell "pol" txt "bitbox"
+bitbox :: String -> IO ()
+bitbox input = spell defaultLang input defaultOutput

@@ -7,74 +7,82 @@ import System.Directory
 
 import Control.Monad
 
-import qualified Data.Map as Map
-import qualified Data.Text as Text
-import Data.Array.IO
-import Data.Array.Unboxed
+import qualified Data.Map as M
+import qualified Data.Text as T
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Builder as B
+
 import Data.Int
 
-import Data.Audio
-import Codec.Wav
+import Codec.Audio.Wave
 
-
-wavFileError :: String
-wavFileError = "wav file error: "
 
 waveExtension :: FilePath
 waveExtension = ".wav"
 
-directorySeparator :: FilePath
-directorySeparator = "/"
+pathSeparator :: FilePath
+pathSeparator = "/"
 
-languagesPath :: FilePath
-languagesPath = "lang" ++ directorySeparator
+langsDirectory :: FilePath
+langsDirectory = "lang"
 
+stdLang :: FilePath
+stdLang = "std"
+
+waveHeaderPath :: FilePath
+waveHeaderPath = langsDirectory ++ pathSeparator ++ "header.wav"
 
 
 glueSpeech :: String -> [String] -> String-> IO ()
-glueSpeech language phones fileName
+glueSpeech lang phones filePath
         | null phones = return ()
         | otherwise   = do
-            phoneAudioMap <- loadLanguageAudio language :: IO (Map.Map String (Audio Int32))
-            print phoneAudioMap
+            phoneAudioMap <- loadLangAudio lang
+            waveHeader <- readWaveFile waveHeaderPath
+            let gluedSpeech = mconcat $ map (phoneAudioMap M.!) phones
+            let phonesWriter = flip B.hPutBuilder gluedSpeech
+            writeWaveFile filePath waveHeader phonesWriter
 
 
-loadLanguageAudio :: ( MArray IOUArray a IO
-                     , IArray UArray a
-                     , Audible a
-                     , AudibleInWav a)
-                     => String -> IO (Map.Map String (Audio a))
-loadLanguageAudio language = do
-    dirContents <- listDirectory languageDirectory
-    phoneAudioList <- zip <$> (return . map phoneName) (filter isWave dirContents)
-                          <*> forM (filter isWave dirContents) (getAudioData languageDirectory)
-    return $ Map.fromList phoneAudioList
+loadLangAudio :: String -> IO (M.Map String B.Builder)
+loadLangAudio lang =
+    M.union <$> loadLangAudio' lang <*> loadLangAudio' stdLang
   where
-    languageDirectory = getLanguageDirectory language
+    loadLangAudio' lang = do
+        let langDirectory = getLangPath lang
+        dirWaves <- filter isWave <$> listDirectory langDirectory
+        phoneAudioList <- zip <$> (return $ map phoneName dirWaves)
+                              <*> forM dirWaves (getAudioData langDirectory)
+        return $ M.fromList phoneAudioList
+
 
 isWave :: FilePath -> Bool
-isWave fileName = waveExtension == ( Text.unpack
-                                   . Text.takeEnd (length waveExtension)
-                                   . Text.pack
+isWave fileName = waveExtension == ( T.unpack
+                                   . T.takeEnd (length waveExtension)
+                                   . T.pack
                                    $ fileName)
 
 phoneName :: FilePath -> String
-phoneName fileName = Text.unpack
-                          . Text.dropEnd (length waveExtension)
-                          . Text.pack
-                          $ fileName
+phoneName fileName = T.unpack
+                   . T.dropEnd (length waveExtension)
+                   . T.pack
+                   $ fileName
 
-getLanguageDirectory :: String -> FilePath
-getLanguageDirectory language = languagesPath ++ language ++ directorySeparator
+getLangPath :: String -> FilePath
+getLangPath lang = langsDirectory ++ pathSeparator ++ lang
 
-getAudioData :: ( MArray IOUArray a IO
-                , IArray UArray a
-                , Audible a
-                , AudibleInWav a)
-                => FilePath -> FilePath -> IO (Audio a)
-getAudioData languageDirectory fileName = do
-    eitherWave <- importFile $ languageDirectory ++ fileName
-    case eitherWave of
-      (Left s) -> putStrLn (wavFileError ++ s) >> exitFailure
-      (Right wave) -> return wave
+getAudioData :: FilePath -> FilePath -> IO B.Builder
+getAudioData langDirectory fileName = do
+    let wavePath = langDirectory ++ pathSeparator ++ fileName
+    waveMetadata <- readWaveFile wavePath
+    waveData <- L.readFile wavePath
+    let waveHeaderLength = fromIntegral $ waveDataOffset waveMetadata
+    return $ B.lazyByteString
+           $ L.drop waveHeaderLength waveData
+
+-- GHCi utils
+generateHeader :: IO ()
+generateHeader = do
+    a <- readWaveFile $ (getLangPath stdLang) ++ pathSeparator ++ "-.wav"
+    writeWaveFile waveHeaderPath a (\h -> return ())
 

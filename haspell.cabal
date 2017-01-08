@@ -20,8 +20,8 @@ library
                      , Soundgluer
   build-depends:       base >= 4.7 && < 5
                      , text
-                     , array
-                     , HCodecs
+                     , bytestring
+                     , wave
                      , directory
                      , containers
   default-language:    Haskell2010

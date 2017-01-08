@@ -4,11 +4,6 @@ import Data.Char (toLower)
 import HspInterpreter (rules, LangRule(..), AliasRule(..), aliasRules)
 
 
-
--- phonemizeCMD :: String -> String -> IO [String]
--- phonemizeCMD lang inp = phonemize lang inp
-
-
 phonemize :: String -> String -> IO [String]
 phonemize lang inp = do
         rlz <- rules lang
