@@ -4,19 +4,14 @@ import Data.Char (toLower)
 import HspInterpreter (rules, LangRule(..), AliasRule(..), aliasRules)
 
 
-
--- phonemizeCMD :: String -> String -> IO [String]
--- phonemizeCMD lang inp = phonemize lang inp
-
-
 phonemize :: String -> String -> IO [String]
 phonemize lang inp = do
         rlz <- rules lang
         let 
-        	i = map toLower inp
-        	rest l s = drop (length (token l)) s
-        	in 
-        	if null i
+            i = map toLower inp
+            rest l s = drop (length (token l)) s
+            in 
+            if null i
             then return []
             else do
                 rst <- phonemize lang $ rest (matchLangRule i rlz) i
@@ -36,11 +31,11 @@ matchLangRule s (x:xs) =
 considerAliases :: [AliasRule] -> [String]-> [String]
 considerAliases _ []=[]
 considerAliases rules phones= maybe didntmatch didmatch $ matchAliasRule phones rules
-		where
-			didntmatch=[head phones]++(considerAliases rules (tail phones))
-			didmatch =(\rule -> considerAliases rules $ (output rule)++(rest rule phones))
-			--didmatch =(\rule -> (output rule)++(considerAliases rules $ rest rule phones))
-			rest aliasrule s = drop (length (regex aliasrule)) s
+        where
+            didntmatch=[head phones]++(considerAliases rules (tail phones))
+            didmatch =(\rule -> considerAliases rules $ (output rule)++(rest rule phones))
+            --didmatch =(\rule -> (output rule)++(considerAliases rules $ rest rule phones))
+            rest aliasrule s = drop (length (regex aliasrule)) s
 
 
 matchAliasRule :: [String] -> [AliasRule] -> Maybe AliasRule
