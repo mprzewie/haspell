@@ -20,7 +20,7 @@ phonemize lang inp = do
                  in return $ considerAliases als $ (filter (/="") res)
 
 matchLangRule:: String -> [LangRule] -> LangRule
-matchLangRule _ [] = MkLangRule "" ["-"]
+matchLangRule s [] = MkLangRule [(head s)] ["-"]
 matchLangRule s (x:xs) = 
     if matching x then x
     else matchLangRule s xs

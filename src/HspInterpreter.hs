@@ -7,7 +7,7 @@ import Data.Char (toLower)
 data LangRule = MkLangRule {token :: String, phones :: [String]} deriving Show
 
 rules :: String -> IO [LangRule]
-rules lang = (langRules "std")>>= \r -> fmap (++r++[MkLangRule " " ["-"]]) (langRules lang)
+rules lang = (langRules "std")>>= \r -> fmap (++r) (langRules lang)
 
 langRules :: String -> IO [LangRule]
 langRules lang = fmap sortLangRules $ fmap  (map $ strToLangRule) rulesStringList 

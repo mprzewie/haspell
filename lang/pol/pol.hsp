@@ -58,3 +58,4 @@ v -> w
 <hardcon>,i,<vow> -> $0,j,$1
 <vow>,i,<vow> -> $0,j,$1
 <softcon>,i,<vow> -> $0,$1
+-,- -> -
