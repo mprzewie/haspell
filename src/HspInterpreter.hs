@@ -99,8 +99,8 @@ unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (output rule) 
 
 aliasRules :: String -> IO [AliasRule]
 aliasRules lang = do
-                rlz <- aliasRulesAliased "pol"
-                als <- aliases "pol"
+                rlz <- aliasRulesAliased lang
+                als <- aliases lang
                 return $ sortAliasRules $ foldr (++) [] (map (unAliasRule als) rlz)
 
 sortAliasRules :: [AliasRule] -> [AliasRule]

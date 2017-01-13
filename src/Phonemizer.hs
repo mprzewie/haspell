@@ -6,18 +6,21 @@ import HspInterpreter (rules, LangRule(..), AliasRule(..), aliasRules)
 
 phonemize :: String -> String -> IO [String]
 phonemize lang inp = do
+        als <- aliasRules lang
         rlz <- rules lang
-        let 
-            i = map toLower inp
-            rest l s = drop (length (token l)) s
-            in 
-            if null i
-            then return []
-            else do
-                rst <- phonemize lang $ rest (matchLangRule i rlz) i
-                als <- aliasRules lang
-                let res = (phones $ matchLangRule i rlz) ++ rst
-                 in return $ considerAliases als $ (filter (/="") res)
+        phonemize' rlz als (map toLower inp)
+        where 
+            phonemize':: [LangRule] -> [AliasRule] -> String -> IO [String]
+            phonemize' r a i=
+                let 
+                rest l s = drop (length (token l)) s
+                in 
+                if null i
+                then return []
+                else do
+                    rst <- phonemize' r a $ rest (matchLangRule i r) i
+                    let res = (phones $ matchLangRule i r) ++ rst
+                     in return $ considerAliases a $ (filter (/="") res)
 
 matchLangRule:: String -> [LangRule] -> LangRule
 matchLangRule s [] = MkLangRule [(head s)] ["-"]
