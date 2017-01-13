@@ -4,13 +4,16 @@ import Data.Char (toLower)
 import HspInterpreter (rules, LangRule(..), AliasRule(..), aliasRules)
 
 
-phonemize :: String -> String -> IO [String]
+phonemize :: String -> String -> IO [[String]]
 phonemize lang inp = do
+        let wrds = filter (/="") $ words (map toLower inp)
         als <- aliasRules lang
         rlz <- rules lang
-        phonemize' rlz als (map toLower inp)
+        let phnmzd = map (phonemize' rlz als) wrds
+        return $ phnmzd
+        --return $ foldr (\acc wrd -> acc>>= \a -> fmap (a++ wrd])) (return []) phnmzd
         where 
-            phonemize':: [LangRule] -> [AliasRule] -> String -> IO [String]
+            phonemize':: [LangRule] -> [AliasRule] -> String-> [String]
             phonemize' r a i=
                 let 
                 rest l s = drop (length (token l)) s
@@ -18,9 +21,9 @@ phonemize lang inp = do
                 if null i
                 then return []
                 else do
-                    rst <- phonemize' r a $ rest (matchLangRule i r) i
+                    let rst = phonemize' r a $ rest (matchLangRule i r) i
                     let res = (phones $ matchLangRule i r) ++ rst
-                     in return $ considerAliases a $ (filter (/="") res)
+                     in considerAliases a $ (filter (/="") res)
 
 matchLangRule:: String -> [LangRule] -> LangRule
 matchLangRule s [] = MkLangRule [(head s)] ["-"]

@@ -33,15 +33,19 @@ waveHeaderPath :: FilePath
 waveHeaderPath = langsDirectory ++ pathSeparator ++ "header.wav"
 
 
-glueSpeech :: String -> [String] -> String-> IO ()
-glueSpeech lang phones filePath
-        | null phones = return ()
-        | otherwise   = do
+glueSpeech :: String -> [[String]] -> String -> IO ()
+glueSpeech lang words filePath
+        | null words = return ()
+        | otherwise = do
             phoneAudioMap <- loadLangAudio lang
             waveHeader <- readWaveFile waveHeaderPath
-            let gluedSpeech = mconcat $ map (phoneAudioMap M.!) phones
+            let appendWord w1 w2 = w1 `mappend` (phoneAudioMap M.! "-") `mappend` w2
+            let gluedSpeech = foldr appendWord (mempty :: B.Builder)
+                            $ map mconcat
+                            $ map (map (phoneAudioMap M.!)) words
             let phonesWriter = flip B.hPutBuilder gluedSpeech
-            writeWaveFile filePath waveHeader phonesWriter
+            writeWaveFile (filePath ++ waveExtension) waveHeader phonesWriter
+
 
 
 loadLangAudio :: String -> IO (M.Map String B.Builder)
