@@ -1,19 +1,19 @@
 module Phonemizer (module Phonemizer) where
 -- for converting text into phones
 import Data.Char (toLower)
-import HspInterpreter (rules, LangRule(..), AliasRule(..), aliasRules)
+import HspInterpreter (Phone,langRules, LangRule(..), AliasRule(..), aliasRules)
 
 
-phonemize :: String -> String -> IO [[String]]
+phonemize :: String -> String -> IO [[Phone]]
 phonemize lang inp = do
         let wrds = filter (/="") $ words (map toLower inp)
         als <- aliasRules lang
-        rlz <- rules lang
+        rlz <- langRules lang
         let phnmzd = map (phonemize' rlz als) wrds
         return $ phnmzd
         --return $ foldr (\acc wrd -> acc>>= \a -> fmap (a++ wrd])) (return []) phnmzd
         where 
-            phonemize':: [LangRule] -> [AliasRule] -> String-> [String]
+            phonemize':: [LangRule] -> [AliasRule] -> String-> [Phone]
             phonemize' r a i=
                 let 
                 rest l s = drop (length (token l)) s
@@ -34,7 +34,7 @@ matchLangRule s (x:xs) =
         matching a = (length s >= length (token a))
                      && (foldr (&&) True (zipWith (==) s (token a)))
 
-considerAliases :: [AliasRule] -> [String]-> [String]
+considerAliases :: [AliasRule] -> [Phone]-> [Phone]
 considerAliases _ []=[]
 considerAliases rules phones= maybe didntmatch didmatch $ matchAliasRule phones rules
         where

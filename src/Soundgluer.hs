@@ -15,7 +15,7 @@ import qualified Data.ByteString.Builder as B
 import Data.Int
 
 import Codec.Audio.Wave
-
+import HspInterpreter (Phone)
 
 waveExtension :: FilePath
 waveExtension = ".wav"
@@ -33,7 +33,7 @@ waveHeaderPath :: FilePath
 waveHeaderPath = langsDirectory ++ pathSeparator ++ "header.wav"
 
 
-glueSpeech :: String -> [[String]] -> String -> IO ()
+glueSpeech :: String -> [[Phone]] -> String -> IO ()
 glueSpeech lang words filePath
         | null words = return ()
         | otherwise = do
