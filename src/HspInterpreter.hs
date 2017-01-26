@@ -7,36 +7,43 @@ import Data.Char (toLower)
 data LangRule = MkLangRule {token :: String, phones :: [Phone]} deriving Show
 type Phone = String
 
--- |list of langRules found in .hsp file of language with given ID
-langRules :: String -> IO [LangRule]
+-- |List of langRules found in .hsp file of language with given ID
+langRules :: String -- ^ ID of language - for example "pol"         
+   -> IO [LangRule]
 langRules lang = fmap sortLangRules $ fmap  (map $ strToLangRule) rulesStringList 
     where 
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
         langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f) !! 1) !! 1)
         rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 2)
 
--- |helper method used to turn contents of .hsp file into langrules
-strToLangRule :: String -> LangRule
+-- |Helper method used to turn contents of .hsp file into langrules
+strToLangRule :: String -- ^ String containing a LangRule - for example "ni -> ni,i"
+            -> LangRule
 strToLangRule s = MkLangRule letter phones
     where
         letter = splitRule !! 0
         phones = splitStr "," $ splitRule !! 1
         splitRule = splitStr "->" $ despace s
 
--- |just like embedded 'lines' method, but omitting empty lines
-lines' :: String -> [String]
+-- |Just like embedded 'lines' method, but omitting empty lines
+lines' :: String -- ^ String containing newLine characters
+        -> [String]
 lines' s = filter (/= "") $ lines s
 
--- |splitting String into a list based on a regex
-splitStr :: String -> String -> [String]
+-- |Splitting String into a list based on a regex
+splitStr :: String -- ^ String to split
+            -> String -- ^ Regular expression to check for and split on
+            -> [String]
 splitStr regex input = Prelude.map unpack $ splitOn (pack regex) $ pack input
 
--- |filters all spaces out of a given String
-despace :: String -> String 
+-- |Filters all spaces out of a given String
+despace :: String  -- ^ String to filter
+            -> String 
 despace s = filter (/= ' ') s
-
--- |sorts a list langRules according to length of their tokens firstly and alphabetically secondarily
-sortLangRules :: [LangRule] -> [LangRule]
+        
+-- |Sorts a list langRules according to length of their tokens firstly and alphabetically secondarily
+sortLangRules :: [LangRule] -- ^ List of langRules to sort
+                -> [LangRule]
 sortLangRules [] = []
 sortLangRules xl = rl ++ ml ++ ll
     where
@@ -45,8 +52,9 @@ sortLangRules xl = rl ++ ml ++ ll
         ml = sortAlph [m | m <- xl, length (token m) == length (token piv)]
         rl = sortLangRules [r | r <- xl, length (token r) > length (token piv)]
 
--- |sorts a list of langRules alphabetically according to their tokens
-sortAlph :: [LangRule] -> [LangRule]
+-- |Sorts a list of langRules alphabetically according to their tokens
+sortAlph :: [LangRule] -- ^ List of langRules to sort
+            -> [LangRule]
 sortAlph [] = []
 sortAlph xl = ll ++ ml ++ rl
     where
@@ -58,16 +66,18 @@ sortAlph xl = ll ++ ml ++ rl
 
 data Alias = MkAlias {alias :: String, matches :: [Phone]} deriving Show
 
--- |makes an alias out of a String from .hsp file
-strToAlias:: String -> Alias
+-- |Makes an alias out of a String from .hsp file
+strToAlias:: String -- ^ String containing an Alias - for example "<vow> -> a,ą,e,ę,i,o,ó,u,y"
+            -> Alias
 strToAlias s = MkAlias alias matches
     where
         alias = splitRule !! 0
         matches = splitStr "," $ splitRule !! 1
         splitRule = splitStr "->" $ despace s
 
--- |list of aliases from given language (.hsp file)
-aliases :: String -> IO [Alias]
+-- |List of aliases from given language (.hsp file)
+aliases :: String -- ^ ID of language - for exaple "pol"
+        -> IO [Alias]
 aliases lang = fmap  (map $ strToAlias) rulesStringList 
     where 
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
@@ -75,22 +85,24 @@ aliases lang = fmap  (map $ strToAlias) rulesStringList
 
 data AliasRule = MkAliasRule {regex::[Phone], output::[Phone]} deriving Show
 
--- |list of aliasRules from given language (.hsp file)
-aliasRulesAliased :: String -> IO [AliasRule]
+-- |List of aliasRules from given language (.hsp file)
+aliasRulesAliased :: String -- ^ ID of language - for exaple "pol"
+            -> IO [AliasRule]
 aliasRulesAliased lang = fmap  (map $ strToAliasRule) rulesStringList 
     where 
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
         rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 4)
 
--- |makes an aliasRule out of a String from .hsp file
-strToAliasRule :: String -> AliasRule
+-- |Makes an aliasRule out of a String from .hsp file
+strToAliasRule :: String -- ^ String containing an aliasRule - for example "<hardcon>,i,<vow> -> $0,j,$1"
+            -> AliasRule
 strToAliasRule s = MkAliasRule regex output
     where
         regex = splitStr "," $ splitRule !! 0
         output = splitStr "," $ splitRule !! 1
         splitRule = splitStr "->" $ despace s
 
--- |generates a list of aliasRules from the given unaliased aliasRule:
+-- |Generates a list of aliasRules from the given unaliased aliasRule:
 -- example:
 --
 -- @
@@ -112,7 +124,9 @@ strToAliasRule s = MkAliasRule regex output
 -- {regex=["y","i"], output=["y","j"]}]
 --
 -- @
-unAliasRule :: [Alias] -> AliasRule -> [AliasRule]
+unAliasRule :: [Alias] -- ^ List of aliases to consider
+            -> AliasRule -- ^ aliasRule to unAlias
+            -> [AliasRule]
 unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (output rule) 0  
     where
         aliasRuleMaker als doneRegex toDoRegex output aliasNo 
@@ -125,14 +139,16 @@ unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (output rule) 
             | otherwise = aliasRuleMaker als (doneRegex++[head toDoRegex]) (tail toDoRegex) output aliasNo
         matchAlias als alsname = 
             [x | x<-als, (alias x)==alsname]!!0
--- |returns a list of unaliased rules from given language (.hsp file)
-aliasRules :: String -> IO [AliasRule]
+-- |Returns a list of unaliased rules from given language (.hsp file)
+aliasRules :: String  -- ^ ID of language - for exaple "pol"
+           -> IO [AliasRule]
 aliasRules lang = do
                 rlz <- aliasRulesAliased lang
                 als <- aliases lang
                 return $ sortAliasRules $ foldr (++) [] (map (unAliasRule als) rlz)
--- |sorts a list of aliasRules according to length of the 
-sortAliasRules :: [AliasRule] -> [AliasRule]
+-- |Sorts a list of aliasRules according to length of regex
+sortAliasRules :: [AliasRule] -- ^ List of aliasRules to sort
+             -> [AliasRule]
 sortAliasRules [] = []
 sortAliasRules xl = rl ++ ml ++ ll
     where
@@ -141,8 +157,11 @@ sortAliasRules xl = rl ++ ml ++ ll
         ml = [m | m <- xl, length (regex m) == length (regex piv)]
         rl = sortAliasRules [r | r <- xl, length (regex r) > length (regex piv)]
 
--- |replaces all of occurences of an element of a list with a list of other elements
-replaceOccurences :: Eq a => a -> [a] -> [a] -> [a]
+-- |Replaces all of occurences of an element of a list with a list of other elements
+replaceOccurences :: Eq a => a  -- ^ Element of list to replace
+                    -> [a]  -- ^ List to replace regex with
+                    -> [a]  -- ^ List to make replacements in
+                    -> [a]
 replaceOccurences _ _ [] = []
 replaceOccurences regex replacer (x:xs) 
                     | x==regex = replacer++(replaceOccurences regex replacer xs)
