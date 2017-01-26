@@ -4,8 +4,8 @@ import Data.Text (pack, unpack, splitOn)
 import Data.Char (toLower)
 
 
-data LangRule = MkLangRule {token :: String, phones :: [Phone]} deriving Show
-type Phone = String
+data LangRule = MkLangRule {token :: String, phones :: [Phone]} deriving (Show,Eq)
+type Phone = String 
 
 -- |List of langRules found in .hsp file of language with given ID
 langRules :: String -- ^ ID of language - for example "pol"         
@@ -64,7 +64,7 @@ sortAlph xl = ll ++ ml ++ rl
         rl = sortAlph [r | r <- xl, token r > token piv]
 
 
-data Alias = MkAlias {alias :: String, matches :: [Phone]} deriving Show
+data Alias = MkAlias {alias :: String, matches :: [Phone]} deriving (Show,Eq)
 
 -- |Makes an alias out of a String from .hsp file
 strToAlias:: String -- ^ String containing an Alias - for example "<vow> -> a,ą,e,ę,i,o,ó,u,y"
@@ -83,7 +83,7 @@ aliases lang = fmap  (map $ strToAlias) rulesStringList
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
         rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 3)
 
-data AliasRule = MkAliasRule {regex::[Phone], output::[Phone]} deriving Show
+data AliasRule = MkAliasRule {regex::[Phone], output::[Phone]} deriving (Show,Eq)
 
 -- |List of aliasRules from given language (.hsp file)
 aliasRulesAliased :: String -- ^ ID of language - for exaple "pol"
