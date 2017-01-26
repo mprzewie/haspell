@@ -1,18 +1,13 @@
-{-# LANGUAGE FlexibleContexts #-}
+module Soundgluer (module Soundgluer) where
 
-module Soundgluer where
-
---import System.Exit
 import System.Directory
 
 import Control.Monad
 
 import qualified Data.Map as M
-import qualified Data.Text as T -- takeEnd
+import qualified Data.Text as T -- pack, unpack, takeEnd, dropEnd
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Builder as B
-
-import Data.Int
 
 import Codec.Audio.Wave
 import HspInterpreter (Phone)
@@ -108,4 +103,3 @@ generateHeader :: IO ()
 generateHeader = do
     a <- readWaveFile $ (getLangPath stdLang) ++ pathSeparator ++ "-.wav"
     writeWaveFile waveHeaderPath a (\h -> return ())
-
