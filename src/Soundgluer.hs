@@ -2,13 +2,13 @@
 
 module Soundgluer where
 
-import System.Exit
+--import System.Exit
 import System.Directory
 
 import Control.Monad
 
 import qualified Data.Map as M
-import qualified Data.Text as T
+import qualified Data.Text as T -- takeEnd
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Builder as B
 
@@ -17,23 +17,32 @@ import Data.Int
 import Codec.Audio.Wave
 import HspInterpreter (Phone)
 
+
+-- | Extension of audio files representing phonems.
 waveExtension :: FilePath
 waveExtension = ".wav"
 
+-- | Probably a naive reimplementation of some builtin.
 pathSeparator :: FilePath
 pathSeparator = "/"
 
+-- | Name of the root languages directory.
 langsDirectory :: FilePath
 langsDirectory = "lang"
 
+-- | Name of the folder containing standard phonems (like silence), which appear accross all languages.
 stdLang :: FilePath
 stdLang = "std"
 
+-- | Path of the wave header used during generation of the output.
 waveHeaderPath :: FilePath
 waveHeaderPath = langsDirectory ++ pathSeparator ++ "header.wav"
 
-
-glueSpeech :: String -> [[Phone]] -> String -> IO ()
+-- | Converts a list of phonemized words in some language into an audio representation and writes it to a file.
+glueSpeech :: String        -- ^ Name of the language. It should match the name of the language folder in the langsDirectory.
+           -> [[Phone]]     -- ^ List of phonemized words
+           -> String        -- ^ Path of the output file
+           -> IO ()
 glueSpeech lang words filePath
         | null words = return ()
         | otherwise = do
@@ -47,8 +56,9 @@ glueSpeech lang words filePath
             writeWaveFile (filePath ++ waveExtension) waveHeader phonesWriter
 
 
-
-loadLangAudio :: String -> IO (M.Map String B.Builder)
+-- | Loads lazily phonems of a given language into memory.
+loadLangAudio :: String                        -- ^ Language name with a matching folder in langsDirectory
+              -> IO (M.Map Phone B.Builder)    -- ^ Map from phonem name to its audio data as a lazy ByteString Builder
 loadLangAudio lang =
     M.union <$> loadLangAudio' lang <*> loadLangAudio' stdLang
   where
@@ -60,22 +70,31 @@ loadLangAudio lang =
         return $ M.fromList phoneAudioList
 
 
-isWave :: FilePath -> Bool
+-- | Checks using extension if file has the WAV format.
+isWave :: FilePath      -- ^ Path of the checked file
+       -> Bool          -- ^ Is it a WAV?
 isWave fileName = waveExtension == ( T.unpack
                                    . T.takeEnd (length waveExtension)
                                    . T.pack
                                    $ fileName)
 
-phoneName :: FilePath -> String
+-- | Extracts the phone name from a file name.
+phoneName :: FilePath     -- ^ File name
+          -> String       -- ^ Extracted phone name
 phoneName fileName = T.unpack
                    . T.dropEnd (length waveExtension)
                    . T.pack
                    $ fileName
 
-getLangPath :: String -> FilePath
+-- | Returns path to the directory of a specified language.
+getLangPath :: String           -- ^ Name of the language matching its folder name
+            -> FilePath         -- ^ Path to a specific language folder
 getLangPath lang = langsDirectory ++ pathSeparator ++ lang
 
-getAudioData :: FilePath -> FilePath -> IO B.Builder
+-- | Loads into memory raw audio data without header from a single wave file and returns a Builder of a lazy ByteString.
+getAudioData :: FilePath        -- ^ Language directory as returned by getLangPath
+             -> FilePath        -- ^ Name of a wave file to read
+             -> IO B.Builder    -- ^ Lazy ByteString Builder
 getAudioData langDirectory fileName = do
     let wavePath = langDirectory ++ pathSeparator ++ fileName
     waveMetadata <- readWaveFile wavePath
@@ -84,7 +103,7 @@ getAudioData langDirectory fileName = do
     return $ B.lazyByteString
            $ L.drop waveHeaderLength waveData
 
--- GHCi utils
+-- | Utility for generating a wave file containing only a header and no audio data.
 generateHeader :: IO ()
 generateHeader = do
     a <- readWaveFile $ (getLangPath stdLang) ++ pathSeparator ++ "-.wav"
