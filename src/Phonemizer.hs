@@ -1,9 +1,9 @@
 module Phonemizer (module Phonemizer) where
--- for converting text into phones
+--for converting text into phones
 import Data.Char (toLower)
 import HspInterpreter (Phone,langRules, LangRule(..), AliasRule(..), aliasRules)
 
---given the ID of language and a String returns a list of "words" - lists of phones
+-- |given the ID of language and a String returns a list of "words" - lists of phones
 phonemize :: String -> String -> IO [[Phone]]
 phonemize lang inp = do
         let wrds = filter (/="") $ words (map toLower inp)
@@ -24,7 +24,7 @@ phonemize lang inp = do
                     let res = (phones $ matchLangRule i r) ++ rst
                      in considerAliases a $ (filter (/="") res)
 
---given a String and a list of LangRules returns the LangRule whose token is the same as the beginning of the String
+-- |given a String and a list of LangRules returns the LangRule whose token is the same as the beginning of the String
 matchLangRule:: String -> [LangRule] -> LangRule
 matchLangRule s [] = MkLangRule [(head s)] ["-"]
 matchLangRule s (x:xs) = 
@@ -34,7 +34,7 @@ matchLangRule s (x:xs) =
         matching a = (length s >= length (token a))
                      && (foldr (&&) True (zipWith (==) s (token a)))
 
---modifies the list of phones based on AliasRules
+-- |modifies the list of phones based on AliasRules
 considerAliases :: [AliasRule] -> [Phone]-> [Phone]
 considerAliases _ []=[]
 considerAliases rules phones= maybe didntmatch didmatch $ matchAliasRule phones rules
@@ -44,7 +44,7 @@ considerAliases rules phones= maybe didntmatch didmatch $ matchAliasRule phones 
             --didmatch =(\rule -> (output rule)++(considerAliases rules $ rest rule phones))
             rest aliasrule s = drop (length (regex aliasrule)) s
 
---given a word (a list of phones) and a list of AliasRules returns the AliasRule whose regex is the same as the beginning of the word
+-- |given a word (a list of phones) and a list of AliasRules returns the AliasRule whose regex is the same as the beginning of the word
 matchAliasRule :: [Phone] -> [AliasRule] -> Maybe AliasRule
 matchAliasRule _ [] = Nothing
 matchAliasRule s (x:xs) = 
