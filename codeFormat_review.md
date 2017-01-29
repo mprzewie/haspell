@@ -1,3 +1,5 @@
+https://github.com/Koozco/codeFormat.git
+
 - Kod sprawia ogólnie dobre wrażenie
 - nazwy zmiennych i funkcji raczej ekspresywne (wyjątek: splitWithForb)
 - w niektórych nazwach pojawiają się literówki, np. formated zamiast formatted, co jest mylące i uciążliwe przy korzystaniu z kodu
