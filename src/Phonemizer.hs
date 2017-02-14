@@ -24,7 +24,7 @@ phonemize lang inp = do
                 else do
                     let rst = phonemize' r a $ rest (matchLangRule i r) i
                     let res = (phones $ matchLangRule i r) ++ rst
-                     in considerAliases a $ (filter (/="") res)
+                     in considerAliases [] a $ (filter (/="") res)
 
 -- |Given a String and a list of LangRules returns the LangRule whose token is the same as the beginning of the String
 matchLangRule:: String -- ^ String to match the token of langRule to
@@ -39,14 +39,18 @@ matchLangRule s (x:xs) =
                      && (foldr (&&) True (zipWith (==) s (token a)))
 
 -- |Modifies the list of phones based on AliasRules
-considerAliases :: [AliasRule] -- ^ List of aliasRules to consider 
+considerAliases :: [AliasRule] -- ^ List of already considered aliasRules
+                -> [AliasRule] -- ^ List of aliasRules to consider 
 				-> [Phone] -- ^ Word to modify based on aliasRules
 				-> [Phone]
-considerAliases _ []=[]
-considerAliases rules phones= maybe didntmatch didmatch $ matchAliasRule phones rules
+considerAliases _ _ []=[]
+considerAliases already rules phones= maybe didntmatch didmatch $ matchAliasRule phones rules
         where
-            didntmatch=[head phones]++(considerAliases rules (tail phones))
-            didmatch =(\rule -> considerAliases rules $ (output rule)++(rest rule phones))
+            didntmatch=[head phones]++(considerAliases already rules (tail phones))
+            didmatch =(\rule -> 
+                if rule `elem` already 
+                    then error ("Infinite loop in language file in an AliasRule which applies to:\n" ++ (foldr (++) "" $ regex rule))
+                else considerAliases (already++[rule]) rules $ (output rule)++(rest rule phones))
             rest aliasrule s = drop (length (regex aliasrule)) s
 
 -- |Given a word (a list of phones) and a list of AliasRules returns the AliasRule whose regex is the same as the beginning of the word

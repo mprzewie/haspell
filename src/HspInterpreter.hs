@@ -7,6 +7,11 @@ import Data.Char (toLower)
 data LangRule = MkLangRule {token :: String, phones :: [Phone]} deriving (Show,Eq)
 type Phone = String 
 
+-- instance Foldable Phone where
+--     foldMap _ "" = ""
+--     foldMap f x = f x
+    
+
 -- |List of langRules found in .hsp file of language with given ID
 langRules :: String -- ^ ID of language - for example "pol"         
    -> IO [LangRule]
