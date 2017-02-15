@@ -56,7 +56,7 @@ a,k,d -> a,g,d
 b,k,d -> b,g,d
 ```
 `$0` on the right side means that Phonemizer will place the value of the 0th (actually first - we are indexing from 0) tag from the left side (in this case - `<tag1>`) in place of `$0`
-
+<!--
 ### Designing AliasRules that produce infinite loops
 
 A series of phones can correspond to multiple aliasrules - which means it can be changed as many times as needed.
@@ -67,6 +67,6 @@ Consider rules:
 <tag1>,j,<tag2> -> $0,i,$1
 ```
 The expression in the beginning is changed into `<tag1>,j,<tag2>` which in turn is changed into `<tag1>,i,<tag2> ` and the process repeats itself infinitely. It is a good practice to make aliasrules which produce results unsuspectible to other aliasrules, so design them with caution!
-
+-->
 ### Using characters from outside of english alphabet on Windows
 For some reason Powershell and .cmd code non-english characters differently than files, so phonemizer treats thaem as different characters. Use Linux instead :)
