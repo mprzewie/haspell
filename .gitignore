@@ -24,3 +24,6 @@ reaper/
 
 # Output waves
 ./*.wav
+
+# Input files
+*.txt
