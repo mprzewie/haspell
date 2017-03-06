@@ -41,15 +41,20 @@ glueSpeech :: String        -- ^ Name of the language. It should match the name 
 glueSpeech lang words filePath
         | null words = return ()
         | otherwise = do
-            phoneAudioMap <- loadLangAudio lang
+            phoneSpeechMap <- loadLangAudio lang
             waveHeader <- readWaveFile waveHeaderPath
-            let appendWord w1 w2 = w1 `mappend` (phoneAudioMap M.! "-") `mappend` w2
+            let appendWord w1 w2 = w1 `mappend` (phoneSpeechMap M.! "-") `mappend` w2
             let gluedSpeech = foldr appendWord (mempty :: B.Builder)
-                            $ map mconcat
-                            $ map (map (phoneAudioMap M.!)) words
+                            $ map (wordToSpeech phoneSpeechMap) words
             let phonesWriter = flip B.hPutBuilder gluedSpeech
             writeWaveFile (filePath ++ waveExtension) waveHeader phonesWriter
 
+-- | Maps word to speech using provided map
+wordToSpeech :: M.Map Phone B.Builder    -- ^ Phone-(audio data) map
+            -> [Phone]                   -- ^ Mapped word
+            -> B.Builder                 -- ^ Lazy ByteString Builder of audio data
+wordToSpeech phoneSpeechMap word =
+    mconcat $ map (phoneSpeechMap M.!) word
 
 -- | Loads lazily phonems of a given language into memory.
 loadLangAudio :: String                        -- ^ Language name with a matching folder in langsDirectory
