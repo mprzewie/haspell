@@ -23,7 +23,7 @@ cabal.project.local
 reaper/
 
 # Output waves
-./*.wav
+*.wav
 
 # Input files
 *.txt
