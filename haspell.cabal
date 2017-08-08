@@ -18,12 +18,14 @@ library
   exposed-modules:     HspInterpreter
                      , Phonemizer
                      , Soundgluer
+                     , Speaker
   build-depends:       base >= 4.7 && < 5
                      , text
                      , bytestring
                      , wave
                      , directory
                      , containers
+                     , process
   default-language:    Haskell2010
 
 executable haspell-exe
