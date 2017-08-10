@@ -1,7 +1,8 @@
 module Phonemizer (module Phonemizer) where
 --for converting text into phones
+import HspTypes(Phone, LangRule(..), AliasRule(..))
 import Data.Char (toLower)
-import HspInterpreter (Phone,langRules, LangRule(..), AliasRule(..), aliasRules)
+import HspInterpreter (langRules, aliasRules)
 
 -- |Given the ID of language and a String returns a list of "words" - lists of phones
 phonemize :: String -- ^ ID of language - for example "p

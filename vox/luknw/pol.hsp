@@ -1,0 +1,62 @@
+#language
+Polish
+
+#phones
+a -> a
+ą -> on
+b -> b
+c -> c
+ć -> ci
+ch -> h
+ci -> ci,i
+cz -> cz
+d -> d
+dż -> drz
+dź -> dzi
+drz -> drz
+dzi -> dzi,i
+dz -> dz
+e -> e
+ę -> en
+f -> f
+g -> g
+h -> h
+i -> i
+j -> j
+k -> k
+l -> l
+ł -> ll
+m -> m
+n -> n
+ń -> ni
+ni -> ni,i
+o -> o
+ó -> u
+p -> p
+r -> r
+rz -> rz
+s -> s
+ś -> si
+si -> si,i
+sz -> sz
+t -> t
+u -> u
+w -> w
+y -> y
+z -> z
+ź -> zi
+zi -> zi,i
+ż -> rz
+v -> w
+
+
+#alias
+<vow> -> a,on,e,en,i,o,u,y
+<hardcon> -> b,d,f,g,h,k,l,m,p,r,rz,sz,t,w
+<softcon> -> ci,dzi,ni,si,zi
+
+#aliasrules
+<hardcon>,i,<vow> -> $0,j,$1
+<vow>,i,<vow> -> $0,j,$1
+<softcon>,i,<vow> -> $0,$1
+-,- -> -
