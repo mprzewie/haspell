@@ -1,6 +1,6 @@
 module Speaker (module Speaker) where
 
-import HspInterpreter(Phone)
+import HspTypes(Phone)
 import Phonemizer (phonemize)
 import Soundgluer (glueSpeech, waveExtension)
 import System.Process(callProcess)

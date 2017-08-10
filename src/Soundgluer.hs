@@ -10,7 +10,7 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Builder as B
 
 import Codec.Audio.Wave
-import HspInterpreter (Phone)
+import HspTypes (Phone)
 
 
 -- | Extension of audio files representing phonems.
