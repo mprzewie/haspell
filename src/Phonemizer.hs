@@ -45,7 +45,7 @@ considerAliases :: [AliasRule] -- ^ List of already considered aliasRules
 				-> [Phone] -- ^ Word to modify based on aliasRules
 				-> [Phone]
 considerAliases _ _ []=[]
-considerAliases already rules phones= maybe didntmatch didmatch $ matchAliasRule phones rules
+considerAliases already rules phones = maybe didntmatch didmatch $ matchAliasRule phones rules
         where
             didntmatch=[head phones]++(considerAliases already rules (tail phones))
             didmatch =(\rule -> 

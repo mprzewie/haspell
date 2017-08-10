@@ -9,9 +9,9 @@ langRules :: String -- ^ ID of language - for example "pol"
    -> IO [LangRule]
 langRules lang = fmap sortLangRules $ fmap  (map $ strToLangRule) rulesStringList 
     where 
-        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
-        langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f) !! 1) !! 1)
-        rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 2)
+        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_phones.hsp")
+        -- langName = fileCont >>= \f -> (return $ (lines' $ (splitStr "#" f) !! 1) !! 1)
+        rulesStringList = fileCont >>= \f -> (return $ lines' f)
 
 -- |Helper method used to turn contents of .hsp file into langrules
 strToLangRule :: String -- ^ String containing a LangRule - for example "ni -> ni,i"
@@ -21,7 +21,6 @@ strToLangRule s = MkLangRule letter phones
         letter = splitRule !! 0
         phones = splitStr "," $ splitRule !! 1
         splitRule = splitStr "->" $ despace s
-
 -- |Just like embedded 'lines' method, but omitting empty lines
 lines' :: String -- ^ String containing newLine characters
         -> [String]
@@ -76,8 +75,8 @@ aliases :: String -- ^ ID of language - for exaple "pol"
         -> IO [Alias]
 aliases lang = fmap  (map $ strToAlias) rulesStringList 
     where 
-        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
-        rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 3)
+        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_alias.hsp")
+        rulesStringList = fileCont >>= \f -> (return $ lines' $ f)
 
 
 -- |List of aliasRules from given language (.hsp file)
@@ -85,8 +84,8 @@ aliasRulesAliased :: String -- ^ ID of language - for exaple "pol"
             -> IO [AliasRule]
 aliasRulesAliased lang = fmap  (map $ strToAliasRule) rulesStringList 
     where 
-        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ ".hsp")
-        rulesStringList = fileCont >>= \f -> (return  $ tail $ lines' $ (splitStr "#" f) !! 4)
+        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_aliasrules.hsp")
+        rulesStringList = fileCont >>= \f -> (return  $ lines' f)
 
 -- |Makes an aliasRule out of a String from .hsp file
 strToAliasRule :: String -- ^ String containing an aliasRule - for example "<hardcon>,i,<vow> -> $0,j,$1"

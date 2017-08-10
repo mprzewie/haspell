@@ -45,11 +45,8 @@ glueSpeech :: String        -- ^ Name of the voice. It should match the name of 
 glueSpeech vox words filePath
         | null words = return ()
         | otherwise = do
-<<<<<<< HEAD
-            phoneSpeechMap <- loadLangAudio lang
-=======
+            phoneSpeechMap <- loadVoxAudio vox
             phoneAudioMap <- loadVoxAudio vox
->>>>>>> speaker
             waveHeader <- readWaveFile waveHeaderPath
             let appendWord w1 w2 = w1 `mappend` (phoneSpeechMap M.! "-") `mappend` w2
             let gluedSpeech = foldr appendWord (mempty :: B.Builder)

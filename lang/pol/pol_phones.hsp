@@ -1,7 +1,3 @@
-#language
-Polish
-
-#phones
 a -> a
 ą -> on
 b -> b
@@ -48,15 +44,3 @@ z -> z
 zi -> zi,i
 ż -> rz
 v -> w
-
-
-#alias
-<vow> -> a,on,e,en,i,o,u,y
-<hardcon> -> b,d,f,g,h,k,l,m,p,r,rz,sz,t,w
-<softcon> -> ci,dzi,ni,si,zi
-
-#aliasrules
-<hardcon>,i,<vow> -> $0,j,$1
-<vow>,i,<vow> -> $0,j,$1
-<softcon>,i,<vow> -> $0,$1
--,- -> -
