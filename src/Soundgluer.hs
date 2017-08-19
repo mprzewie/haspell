@@ -10,7 +10,7 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Builder as B
 
 import Codec.Audio.Wave
-import HspTypes (Phone)
+import HspTypes (Phoneme)
 
 
 -- | Extension of audio files representing phonems.
@@ -39,7 +39,7 @@ waveHeaderPath = voxDirectory ++ pathSeparator ++ stdVox ++ pathSeparator ++ "he
 
 -- | Converts a list of phonemized words into an audio representation in some voice and writes it to a file.
 glueSpeech :: String        -- ^ Name of the voice. It should match the name of the voice folder in the voxDirectory.
-           -> [[Phone]]     -- ^ List of phonemized words
+           -> [[Phoneme]]     -- ^ List of phonemized words
            -> String        -- ^ Path of the output file
            -> IO ()
 glueSpeech vox words filePath
@@ -55,15 +55,15 @@ glueSpeech vox words filePath
             writeWaveFile (filePath ++ waveExtension) waveHeader phonesWriter
 
 -- | Maps word to speech using provided map
-wordToSpeech :: M.Map Phone B.Builder    -- ^ Phone-(audio data) map
-            -> [Phone]                   -- ^ Mapped word
+wordToSpeech :: M.Map Phoneme B.Builder    -- ^ Phone-(audio data) map
+            -> [Phoneme]                   -- ^ Mapped word
             -> B.Builder                 -- ^ Lazy ByteString Builder of audio data
 wordToSpeech phoneSpeechMap word =
     mconcat $ map (phoneSpeechMap M.!) word
 
 -- | Loads lazily phonems of a given voice into memory.
 loadVoxAudio :: String                        -- ^ Language name with a matching folder in langsDirectory
-              -> IO (M.Map Phone B.Builder)    -- ^ Map from phonem name to its audio data as a lazy ByteString Builder
+              -> IO (M.Map Phoneme B.Builder)    -- ^ Map from phonem name to its audio data as a lazy ByteString Builder
 loadVoxAudio vox =
     M.union <$> loadVoxAudio' vox <*> loadVoxAudio' stdVox
   where

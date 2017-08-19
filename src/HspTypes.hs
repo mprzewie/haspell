@@ -1,13 +1,11 @@
 module HspTypes (module HspTypes) where
 
-data LangRule = MkLangRule {token :: String, phones :: [Phone]} deriving (Show,Eq)
-type Phone = String 
+type Phoneme = String
 
--- instance Foldable Phone where
---     foldMap _ "" = ""
---     foldMap f x = f x
-    
+type Word = [Phoneme]
 
-data Alias = MkAlias {alias :: String, matches :: [Phone]} deriving (Show,Eq)
+data LangRule = MkLangRule {token :: String, phones :: [Phoneme]} deriving (Show,Eq)
 
-data AliasRule = MkAliasRule {regex::[Phone], output::[Phone]} deriving (Show,Eq)
+data Alias = MkAlias {alias :: String, matches :: [Phoneme]} deriving (Show,Eq)
+
+data AliasRule = MkAliasRule {regex::[Phoneme], output::[Phoneme]} deriving (Show,Eq)
