@@ -1,7 +1,8 @@
 module Phonemizer (module Phonemizer) where
 --for converting text into phones
-import HspTypes(Phoneme, LangRule(..), AliasRule(..))
+import HspTypes(Phoneme, Rule(..), PhonemeRule, AliasRule)
 import Data.Char (toLower)
+import Data.Maybe (fromMaybe)
 import HspInterpreter (langRules, aliasRules)
 
 -- |Given the ID of language and a String returns a list of "words" - lists of phones
@@ -15,53 +16,43 @@ phonemize lang inp = do
         let phnmzd = map (phonemize' rlz als) wrds
         return phnmzd
         where
-            phonemize':: [LangRule] -> [AliasRule] -> String-> [Phoneme]
-            phonemize' r a i=
+            phonemize':: [PhonemeRule] -> [AliasRule] -> String-> [Phoneme]
+            phonemize' r a i =
                 let
-                rest l = drop (length (token l))
+                rest l = drop (length (regex l))
                 in
                 if null i
                 then return []
                 else do
-                    let rst = phonemize' r a $ rest (matchLangRule i r) i
-                    let res = phones (matchLangRule i r) ++ rst
-                     in considerAliases [] a $ filter (/="") res
+                    let matched = fromMaybe (MkRule "" ["-"]) $ matchRule i r
+                    let rst = phonemize' r a $ rest matched i
+                    let res = phones matched ++ rst
+                      in considerAliases [] a $ filter (/="") res
 
--- |Given a String and a list of LangRules returns the LangRule whose token is the same as the beginning of the String
-matchLangRule:: String -- ^ String to match the token of langRule to
-			 -> [LangRule] -- ^ List of available langRules to match to
-			  -> LangRule -- ^ Matched langRule
-matchLangRule s [] = MkLangRule [head s] ["-"]
-matchLangRule s (x:xs) =
-    if matching x then x
-    else matchLangRule s xs
-    where
-        matching a = (length s >= length (token a))
-                     && and (zipWith (==) s (token a))
+
+matchRule :: Eq r => [r]
+                  -> [Rule r]
+                  -> Maybe (Rule r)
+matchRule s [] = Nothing
+matchRule s (x:xs) =
+  if matching x then Just x
+  else matchRule s xs
+  where
+    matching rule = (length s >= length (regex rule))
+                    && and (zipWith (==) s (regex rule))
+
 
 -- |Modifies the list of phones based on AliasRules
 considerAliases :: [AliasRule] -- ^ List of already considered aliasRules
                 -> [AliasRule] -- ^ List of aliasRules to consider
-				-> [Phoneme] -- ^ Word to modify based on aliasRules
-				-> [Phoneme]
+                -> [Phoneme] -- ^ Word to modify based on aliasRules
+                -> [Phoneme]
 considerAliases _ _ []=[]
-considerAliases already rules phones = maybe didntmatch didmatch $ matchAliasRule phones rules
+considerAliases already rules word = maybe didntmatch didmatch $ matchRule word rules
         where
-            didntmatch = head phones : considerAliases already rules (tail phones)
+            didntmatch = head word : considerAliases already rules (tail word)
             didmatch rule =
                 if rule `elem` already
                     then error ("Infinite loop in language file in an AliasRule which applies to:\n" ++ concat (regex rule))
-                else considerAliases (already++[rule]) rules $ output rule ++ rest rule phones
+                else considerAliases (already++[rule]) rules $ phones rule ++ rest rule word
             rest aliasrule = drop (length (regex aliasrule))
-
--- |Given a word (a list of phones) and a list of AliasRules returns the AliasRule whose regex is the same as the beginning of the word
-matchAliasRule :: [Phoneme]  -- ^ List of phones to match the token of aliasRule to
-				-> [AliasRule] -- ^ List of available aliasRules to consider
-				-> Maybe AliasRule -- ^ Matched langRule
-matchAliasRule _ [] = Nothing
-matchAliasRule s (x:xs) =
-    if matching x then Just x
-    else matchAliasRule s xs
-    where
-        matching a = (length s >= length (regex a))
-                     && and (zipWith (==) s (regex a))
