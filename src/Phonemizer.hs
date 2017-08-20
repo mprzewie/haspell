@@ -3,7 +3,7 @@ module Phonemizer (module Phonemizer) where
 import HspTypes(Phoneme, Rule(..), PhonemeRule, AliasRule)
 import Data.Char (toLower)
 import Data.Maybe (fromMaybe)
-import HspInterpreter (langRules, aliasRules)
+import HspInterpreter (phonemeRules, aliasRules)
 
 -- |Given the ID of language and a String returns a list of "words" - lists of phones
 phonemize :: String -- ^ ID of language - for example "p
@@ -12,7 +12,7 @@ phonemize :: String -- ^ ID of language - for example "p
 phonemize lang inp = do
         let wrds = filter (/="") $ words (map toLower inp)
         als <- aliasRules lang
-        rlz <- langRules lang
+        rlz <- phonemeRules lang
         let phnmzd = map (phonemize' rlz als) wrds
         return phnmzd
         where

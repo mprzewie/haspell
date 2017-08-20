@@ -4,19 +4,19 @@ import Data.Text (pack, unpack, splitOn)
 import Data.Char (toLower)
 import HspTypes(PhonemeRule, AliasRule, Rule(..), Alias(..))
 
--- |List of langRules found in .hsp file of language with given ID
-langRules :: String -- ^ ID of language - for example "pol"
+-- |List of phonemeRules found in .hsp file of language with given ID
+phonemeRules :: String -- ^ ID of language - for example "pol"
    -> IO [PhonemeRule]
 
-langRules lang = fmap sortRules $ fmap  (map strToLangRule) rulesStringList
+phonemeRules lang = fmap sortRules $ fmap  (map strToPhonemeRule) rulesStringList
     where
         fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_phones.hsp")
         rulesStringList = fileCont >>= \f -> return $ lines' f
 
--- |Helper method used to turn contents of .hsp file into langrules
-strToLangRule :: String -- ^ String containing a LangRule - for example "ni -> ni,i"
+-- |Helper method used to turn contents of .hsp file into phonemeRules
+strToPhonemeRule :: String -- ^ String containing a PhonemeRule - for example "ni -> ni,i"
             -> PhonemeRule
-strToLangRule s = MkRule letter phones
+strToPhonemeRule s = MkRule letter phones
     where
         letter = splitRule !! 0
         phones = splitStr "," $ splitRule !! 1
@@ -31,7 +31,7 @@ lines' s = filter (/= "") $ lines s
 splitStr :: String -- ^ String to split
             -> String -- ^ Regular expression to check for and split on
             -> [String]
-splitStr regex input = Prelude.map unpack $ splitOn (pack regex) $ pack input
+splitStr regex input = map unpack $ splitOn (pack regex) $ pack input
 
 -- |Filters all spaces out of a given String
 despace :: String  -- ^ String to filter
@@ -39,7 +39,7 @@ despace :: String  -- ^ String to filter
 despace = filter (/= ' ')
 
 -- |Sorts a list rules based on the length of their regexes
-sortRules :: Ord r  => [Rule r] -- ^ List of langRules to sort
+sortRules :: Ord r  => [Rule r] -- ^ List of rules to sort
                     -> [Rule r]
 sortRules [] = []
 sortRules xl = rl ++ ml ++ ll
@@ -121,6 +121,7 @@ unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (phones rule) 
             | otherwise = aliasRuleMaker als (doneRegex++[head toDoRegex]) (tail toDoRegex) output aliasNo
         matchAlias als alsname =
             head [x | x<-als, alias x ==alsname]
+            
 -- |Returns a list of unaliased rules from given language (.hsp file)
 aliasRules :: String  -- ^ ID of language - for exaple "pol"
            -> IO [AliasRule]

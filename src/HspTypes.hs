@@ -2,7 +2,7 @@ module HspTypes (module HspTypes) where
 
 type Phoneme = String
 
-data Rule r = MkRule {regex :: [r], phones :: [Phoneme]} deriving Show
+data Rule regexType = MkRule {regex :: [regexType], phones :: [Phoneme]} deriving Show
 
 instance Eq r => Eq (Rule r) where
   MkRule a b == MkRule c d = a == c
