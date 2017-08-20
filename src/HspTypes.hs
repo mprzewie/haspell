@@ -2,17 +2,17 @@ module HspTypes (module HspTypes) where
 
 type Phoneme = String
 
-data Rule regexType = MkRule {regex :: [regexType], phones :: [Phoneme]} deriving Show
+data Rule fromType toType = MkRule {regex :: [fromType], output :: [toType]} deriving Show
 
-instance Eq r => Eq (Rule r) where
+instance Eq r => Eq (Rule r x) where
   MkRule a b == MkRule c d = a == c
 
-instance Ord r => Ord (Rule r) where
+instance Ord r => Ord (Rule r x) where
   MkRule a b <= MkRule c d = a <= c
 
-type PhonemeRule = Rule Char
+type PhonemeRule = Rule Char Phoneme
 
-type AliasRule = Rule Phoneme
+type AliasRule = Rule Phoneme Phoneme
 
 -- data LangRule = MkLangRule {token :: String, phones :: [Phoneme]} deriving (Show,Eq)
 

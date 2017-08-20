@@ -4,23 +4,25 @@ import Data.Text (pack, unpack, splitOn)
 import Data.Char (toLower)
 import HspTypes(PhonemeRule, AliasRule, Rule(..), Alias(..))
 
+readHspFile :: String
+            -> IO [(String, String)]
+readHspFile path = do
+  fileCont <- readFile path
+  let rawLines = filter (/= "") $ lines fileCont
+  let parsedLines = filter (/= "") $ map (\line -> despace $ head $ splitStr "#" line) rawLines
+  return $ map (\line -> (splitStr "->" line !!0 , splitStr "->" line !! 1)) parsedLines
+
+
 -- |List of phonemeRules found in .hsp file of language with given ID
 phonemeRules :: String -- ^ ID of language - for example "pol"
    -> IO [PhonemeRule]
-
-phonemeRules lang = fmap sortRules $ fmap  (map strToPhonemeRule) rulesStringList
+phonemeRules lang = fmap sortRules $ fmap  (map tupleToPhonemeRule) rulesTupleList
     where
-        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_phones.hsp")
-        rulesStringList = fileCont >>= \f -> return $ lines' f
+        rulesTupleList =  readHspFile ("lang/" ++ lang ++ "/" ++ lang ++ "_phones.hsp")
 
--- |Helper method used to turn contents of .hsp file into phonemeRules
-strToPhonemeRule :: String -- ^ String containing a PhonemeRule - for example "ni -> ni,i"
-            -> PhonemeRule
-strToPhonemeRule s = MkRule letter phones
-    where
-        letter = splitRule !! 0
-        phones = splitStr "," $ splitRule !! 1
-        splitRule = splitStr "->" $ despace s
+tupleToPhonemeRule :: (String, String)
+                            -> PhonemeRule
+tupleToPhonemeRule (regex, phonesInStr) = MkRule regex (splitStr "," phonesInStr)
 
 -- |Just like embedded 'lines' method, but omitting empty lines
 lines' :: String -- ^ String containing newLine characters
@@ -39,8 +41,8 @@ despace :: String  -- ^ String to filter
 despace = filter (/= ' ')
 
 -- |Sorts a list rules based on the length of their regexes
-sortRules :: Ord r  => [Rule r] -- ^ List of rules to sort
-                    -> [Rule r]
+sortRules :: Ord r  => [Rule r x] -- ^ List of rules to sort
+                    -> [Rule r x]
 sortRules [] = []
 sortRules xl = rl ++ ml ++ ll
     where
@@ -50,39 +52,28 @@ sortRules xl = rl ++ ml ++ ll
         rl = sortRules [r | r <- xl, length (regex r) > length (regex piv)]
 
 -- |Makes an alias out of a String from .hsp file
-strToAlias:: String -- ^ String containing an Alias - for example "<vow> -> a,ą,e,ę,i,o,ó,u,y"
+tupleToAlias:: (String, String) -- ^ String containing an Alias - for example "<vow> -> a,ą,e,ę,i,o,ó,u,y"
             -> Alias
-strToAlias s = MkAlias alias matches
-    where
-        alias = splitRule !! 0
-        matches = splitStr "," $ splitRule !! 1
-        splitRule = splitStr "->" $ despace s
+tupleToAlias (alias, matchesStr) = MkAlias alias (splitStr "," matchesStr)
 
 -- |List of aliases from given language (.hsp file)
 aliases :: String -- ^ ID of language - for exaple "pol"
         -> IO [Alias]
-aliases lang = fmap  (map strToAlias) rulesStringList
+aliases lang = fmap  (map tupleToAlias) aliasesTupleList
     where
-        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_alias.hsp")
-        rulesStringList = fileCont >>= \f -> return $ lines' f
+        aliasesTupleList = readHspFile ("lang/" ++ lang ++ "/" ++ lang ++ "_alias.hsp")
 
 
 -- |List of aliasRules from given language (.hsp file)
 aliasRulesAliased :: String -- ^ ID of language - for exaple "pol"
             -> IO [AliasRule]
-aliasRulesAliased lang = fmap  (map strToAliasRule) rulesStringList
+aliasRulesAliased lang = fmap  (map tupleToAliasRule) rulesTupleList
     where
-        fileCont = readFile ("lang/" ++ lang ++ "/" ++ lang ++ "_aliasrules.hsp")
-        rulesStringList = fileCont >>= \f -> return  $ lines' f
-
+        rulesTupleList = readHspFile ("lang/" ++ lang ++ "/" ++ lang ++ "_aliasrules.hsp")
 -- |Makes an aliasRule out of a String from .hsp file
-strToAliasRule :: String -- ^ String containing an aliasRule - for example "<hardcon>,i,<vow> -> $0,j,$1"
+tupleToAliasRule :: (String, String) -- ^ String containing an aliasRule - for example "<hardcon>,i,<vow> -> $0,j,$1"
             -> AliasRule
-strToAliasRule s = MkRule regex output
-    where
-        regex = splitStr "," $ splitRule !! 0
-        output = splitStr "," $ splitRule !! 1
-        splitRule = splitStr "->" $ despace s
+tupleToAliasRule (regexStr, outputStr) = MkRule (splitStr "," regexStr) (splitStr "," outputStr)
 
 -- |Generates a list of aliasRules from the given unaliased aliasRule:
 -- example:
@@ -109,7 +100,7 @@ strToAliasRule s = MkRule regex output
 unAliasRule :: [Alias] -- ^ List of aliases to consider
             -> AliasRule -- ^ aliasRule to unAlias
             -> [AliasRule]
-unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (phones rule) 0
+unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (output rule) 0
     where
         aliasRuleMaker als doneRegex toDoRegex output aliasNo
             | toDoRegex == [] = [MkRule doneRegex output]
@@ -121,7 +112,7 @@ unAliasRule alslist rule = aliasRuleMaker alslist [] (regex rule) (phones rule) 
             | otherwise = aliasRuleMaker als (doneRegex++[head toDoRegex]) (tail toDoRegex) output aliasNo
         matchAlias als alsname =
             head [x | x<-als, alias x ==alsname]
-            
+
 -- |Returns a list of unaliased rules from given language (.hsp file)
 aliasRules :: String  -- ^ ID of language - for exaple "pol"
            -> IO [AliasRule]

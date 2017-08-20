@@ -11,28 +11,37 @@ phonemize :: String -- ^ ID of language - for example "p
           -> IO [[Phoneme]]
 phonemize lang inp = do
         let wrds = filter (/="") $ words (map toLower inp)
-        als <- aliasRules lang
-        rlz <- phonemeRules lang
-        let phnmzd = map (phonemize' rlz als) wrds
-        return phnmzd
+        alsrules <- aliasRules lang
+        phnrules <- phonemeRules lang
+        return $ map (applyAliasRules [] alsrules . applyPhonemeRules phnrules) wrds
+
+applyPhonemeRules :: [PhonemeRule]
+                  -> String
+                  -> [Phoneme]
+applyPhonemeRules _ "" = []
+applyPhonemeRules rules word = filter (/= "") $ output matched ++ applyPhonemeRules rules rest where
+  matched = fromMaybe (MkRule [head word] [""]) $ matchRule word rules
+  rest = drop (length (regex matched)) word
+
+-- |Modifies the list of phones based on AliasRules
+applyAliasRules :: [AliasRule] -- ^ List of already considered aliasRules
+                -> [AliasRule] -- ^ List of aliasRules to consider
+                -> [Phoneme] -- ^ Word to modify based on aliasRules
+                -> [Phoneme]
+applyAliasRules _ _ []=[]
+applyAliasRules already rules word = maybe didntmatch didmatch $ matchRule word rules
         where
-            phonemize':: [PhonemeRule] -> [AliasRule] -> String-> [Phoneme]
-            phonemize' r a i =
-                let
-                rest l = drop (length (regex l))
-                in
-                if null i
-                then return []
-                else do
-                    let matched = fromMaybe (MkRule "" ["-"]) $ matchRule i r
-                    let rst = phonemize' r a $ rest matched i
-                    let res = phones matched ++ rst
-                      in considerAliases [] a $ filter (/="") res
+            didntmatch = head word : applyAliasRules already rules (tail word)
+            didmatch rule =
+                if rule `elem` already
+                    then error ("Infinite loop in language file in an AliasRule which applies to:\n" ++ concat (regex rule))
+                else applyAliasRules (already++[rule]) rules $ output rule ++ rest rule word
+            rest aliasrule = drop (length (regex aliasrule))
 
 
 matchRule :: Eq r => [r]
-                  -> [Rule r]
-                  -> Maybe (Rule r)
+                  -> [Rule r x]
+                  -> Maybe (Rule r x)
 matchRule s [] = Nothing
 matchRule s (x:xs) =
   if matching x then Just x
@@ -40,19 +49,3 @@ matchRule s (x:xs) =
   where
     matching rule = (length s >= length (regex rule))
                     && and (zipWith (==) s (regex rule))
-
-
--- |Modifies the list of phones based on AliasRules
-considerAliases :: [AliasRule] -- ^ List of already considered aliasRules
-                -> [AliasRule] -- ^ List of aliasRules to consider
-                -> [Phoneme] -- ^ Word to modify based on aliasRules
-                -> [Phoneme]
-considerAliases _ _ []=[]
-considerAliases already rules word = maybe didntmatch didmatch $ matchRule word rules
-        where
-            didntmatch = head word : considerAliases already rules (tail word)
-            didmatch rule =
-                if rule `elem` already
-                    then error ("Infinite loop in language file in an AliasRule which applies to:\n" ++ concat (regex rule))
-                else considerAliases (already++[rule]) rules $ phones rule ++ rest rule word
-            rest aliasrule = drop (length (regex aliasrule))
