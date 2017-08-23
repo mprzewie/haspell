@@ -13,29 +13,31 @@ phonemize lang inp = do
         let wrds = filter (/="") $ words (map toLower inp)
         alsrules <- aliasRules lang
         phnrules <- phonemeRules lang
-        return $ map (applyAliasRules [] alsrules . applyPhonemeRules phnrules) wrds
+        return $ map ( filter (/= "") . applyNonCompulsoryRules [] alsrules . applyMappingRules phnrules [""]) wrds
 
-applyPhonemeRules :: [PhonemeRule]
-                  -> String
-                  -> [Phoneme]
-applyPhonemeRules _ "" = []
-applyPhonemeRules rules word = filter (/= "") $ output matched ++ applyPhonemeRules rules rest where
-  matched = fromMaybe (MkRule [head word] [""]) $ matchRule word rules
-  rest = drop (length (regex matched)) word
+
+applyMappingRules :: Eq f => [Rule f t]
+                          -> [t]
+                          -> [f]
+                          -> [t]
+applyMappingRules _ _ [] = []
+applyMappingRules rules defaultResult toMap = output matched ++ applyMappingRules rules defaultResult rest where
+  matched = fromMaybe (MkRule [head toMap] defaultResult) $ matchRule toMap rules
+  rest = drop (length (regex matched)) toMap
 
 -- |Modifies the list of phones based on AliasRules
-applyAliasRules :: [AliasRule] -- ^ List of already considered aliasRules
-                -> [AliasRule] -- ^ List of aliasRules to consider
-                -> [Phoneme] -- ^ Word to modify based on aliasRules
-                -> [Phoneme]
-applyAliasRules _ _ []=[]
-applyAliasRules already rules word = maybe didntmatch didmatch $ matchRule word rules
+applyNonCompulsoryRules :: Eq f => [Rule f f] -- ^ List of already considered aliasRules
+                                -> [Rule f f] -- ^ List of aliasRules to consider
+                                -> [f] -- ^ Word to modify based on aliasRules
+                                -> [f]
+applyNonCompulsoryRules _ _ []=[]
+applyNonCompulsoryRules already rules toMap = maybe didntmatch didmatch $ matchRule toMap rules
         where
-            didntmatch = head word : applyAliasRules already rules (tail word)
+            didntmatch = head toMap : applyNonCompulsoryRules already rules (tail toMap)
             didmatch rule =
                 if rule `elem` already
-                    then error ("Infinite loop in language file in an AliasRule which applies to:\n" ++ concat (regex rule))
-                else applyAliasRules (already++[rule]) rules $ output rule ++ rest rule word
+                    then error ("Infinite loop in language file in an noncompulsory rule!")
+                else applyNonCompulsoryRules (already++[rule]) rules $ output rule ++ rest rule toMap
             rest aliasrule = drop (length (regex aliasrule))
 
 
